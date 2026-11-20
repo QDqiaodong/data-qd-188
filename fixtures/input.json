@@ -1,0 +1,5 @@
+{
+  "size": 5, "setup": {"black": [[0,1],[1,0],[2,1]], "white": [[1,1],[4,4]]},
+  "next_player": "B", "komi": "0.5",
+  "moves": [{"id":"capture","player":"B","point":[1,2]}, {"id":"pass-w","player":"W","point":null}, {"id":"pass-b","player":"B","point":null}]
+}
