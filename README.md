@@ -6,6 +6,8 @@ board.py 处理棋块气与提子，service.py 管理轮次/简单劫及合法�
 
 另含离线分包接收与归档：archive.py 按手号合并分包版本、核对后凭据封存、原子提交与最终归档，archive_cli.py 提供 `go-record-archive` 子命令（init/receive/view/seal），每个状态目录管理一盘。参数、JSON 字段与断线重试见 [归档流程](docs/archive.md)。
 
+赛后对账与晋级核定：standings.py 按交接清单核对台次↔盘号的一一对应、枚举可行对应关系并独立核定名次，standings_cli.py 提供 `go-record-standings --source MANIFEST.json --output REPORT.json`。清单字段、晋级口径、见证与诊断码见 [对账与晋级](docs/standings.md)。
+
 ## 安装、测试与演示
 
 Python >=3.11，本批实际使用本机 CPython3.12.14。运行与测试仅用标准库；构建工具精确锁定。每仓独立 .venv，公共包缓存可共享；不共享其他项目的site-packages。
@@ -21,7 +23,7 @@ uv pip check --python .venv/bin/python
 .venv/bin/go-record --source fixtures/input.json --output run/report-initial.json
 ```
 
-实际21项测试通过；CLI演示生成JSON，摘要为：
+实际37项测试通过；CLI演示生成JSON，摘要为：
 
 ```json
 {
