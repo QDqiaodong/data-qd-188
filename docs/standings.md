@@ -42,6 +42,41 @@ go-record-standings --source MANIFEST.json --output REPORT.json
 每份归档：`game_id`（全清单唯一）与 `state_dir`（相对目录按清单所在目录解释）。
 候选超过一份的台次最多 10 个，这是本次人工交接筛查的范围。
 
+归档条目允许增加可选的 `appeal_dir`（相对路径同样按清单所在目录解释），指向一份
+`go-record-appeal` 终局死子申诉案卷。不填时维持原输出和行为，报告字节级不变；
+填写后按 [终局死子申诉案卷](appeal.md) 接入复核。
+
+## 申诉案卷接入
+
+配置 `appeal_dir` 后以**只读**方式打开案卷，并用归档核对案卷的开案证据：盘号、
+末手回执 ID、末手封存位置、开案盘面、盘宽与贴目必须逐项一致；同时确认案卷当前
+状态与它所固化的裁定互相一致（`verify_state`：轮次连续、裁定 ID 与内容相符、
+裁定可由记录的证据独立复算）。以下均为可定位的输入错误（退出 2），**不能改用
+旧比分**：
+
+| code | 含义 |
+| --- | --- |
+| `appeal_unreadable` | 案卷不可读或模式无法识别（含 `game_id`、`appeal_dir`） |
+| `appeal_game_id_mismatch` | 案卷内盘号与清单声明不符 |
+| `appeal_evidence_mismatch` | 末手回执、封存位置、开案盘面、盘宽或贴目与归档不符 |
+| `appeal_state_inconsistent` | 当前状态与对应裁定不一致，或裁定无法独立复算 |
+| `appeal_archive_not_final` | 引用的归档尚无终局证据（未封到声明末手） |
+
+一次读取同一案卷时，状态、轮次和胜负来自同一份已提交状态；不要求多份案卷同时
+取一个全局快照，也不修改案卷或归档。
+
+- 案卷**未结案**（缺票、票齐分歧、一致待结案）不产出正式胜负：若不存在其他未最终
+  封存的归档，报告状态为 `awaiting_ruling`，列出待裁盘号、当前轮次、涉及台号与
+  各台实际可用候选，不给积分、名次、晋级结论。
+- 案卷**已结案**时只采用当前轮裁定的 `winner_after`（`B`/`W`/`draw`），原归档
+  `final.area` 不再作为该盘成绩；见证的台次→盘号条目同时给出原末手回执
+  `receipt_id` 与采用的裁定轮次 `appeal_round`，可反查案卷 `history --round`。
+- 重开后的案卷不再让上一轮裁定代表当前胜负；历史轮次仍可经案卷独立复算。
+
+原结构检查、归档终局证据检查与完整对应关系检查（Hall/完美匹配）仍先于一切状态
+结论执行：无完整对应关系时照常报 `no_complete_assignment`，不会被
+`awaiting_ruling` 掩盖。
+
 ## 只认已经完成的归档
 
 逐份读取 `state_dir` 下现有 `go-record-archive` 状态，核对声明盘号与实际盘号一致。
@@ -96,21 +131,26 @@ go-record-standings --source MANIFEST.json --output REPORT.json
 ```json
 {
   "schema": "go-record-standings/1",
-  "status": "complete | awaiting_final",
+  "status": "complete | awaiting_final | awaiting_ruling",
   "qualify_count": 1,
   "awaiting_game_ids": [],
+  "awaiting_ruling": [{"game_id": "...", "round": 2, "table_ids": ["T1"]}],
   "tables": [{"table_id", "round", "black", "white", "usable_candidates": ["..."]}],
   "players": [{"player_id", "category", "best_rank", "best_witness",
                "worst_rank", "worst_witness"}],
   "qualified": ["..."] | null,
-  "witnesses": [{"id", "assignment": [{"table_id", "game_id", "receipt_id"}],
+  "witnesses": [{"id", "assignment": [{"table_id", "game_id", "receipt_id",
+                                        "appeal_round"?: 1}],
                  "standings": [{"rank", "player_id", "score", "opponent_score"}]}]
 }
 ```
 
 若存在完整对应关系但还有盘未最终封存，出 `awaiting_final` 报告：列出未完成的
 `awaiting_game_ids` 和各台 `usable_candidates`，`players` / `qualified` /
-`witnesses` 均为 `null`，不给分、不列晋级结论。全部封存后才出 `complete`。
+`witnesses` 均为 `null`，不给分、不列晋级结论。没有未最终封存的归档、但有案卷未
+结案时，出 `awaiting_ruling` 报告：`awaiting_ruling` 逐项给出待裁盘号、轮次与涉及
+台号，其余结论字段同样为 `null`。全部归档封存且全部案卷结案后才出 `complete`。
+`appeal_round` 只在该盘配置了案卷时出现，无案卷清单的报告字段保持原样。
 
 ## 诊断码一览
 
@@ -122,6 +162,11 @@ go-record-standings --source MANIFEST.json --output REPORT.json
 | `archive_unreadable` | 归档不可读或格式错误（含 `game_id`、`state_dir`） |
 | `game_id_mismatch` | 状态目录里的实际盘号与清单声明不符 |
 | `final_inconsistent` | 所谓最终结果缺少一致的末手封存位置、回执证据或有效胜负值 |
+| `appeal_unreadable` | 申诉案卷不可读或模式无法识别（含 `game_id`、`appeal_dir`） |
+| `appeal_game_id_mismatch` | 案卷内盘号与清单声明不符 |
+| `appeal_evidence_mismatch` | 案卷开案证据（末手回执/封存位置/盘面/盘宽/贴目）与归档不符 |
+| `appeal_state_inconsistent` | 案卷当前状态与对应裁定不一致或裁定不可复算 |
+| `appeal_archive_not_final` | 案卷引用的归档尚无终局证据 |
 | `no_complete_assignment` | 全批无法一一对应（给出违约的台号集合与候选集合） |
 | `output_exists` | 输出目标已存在（原子新建，不覆盖） |
 | `io_error` | 源文件或输出路径读写失败 |
@@ -161,4 +206,5 @@ A、C 的最好名次都是 1（各有一套见证），B、D `category` 为 `ou
 ## 边界
 
 不解析 SGF、不联网、不做死活裁定；不从已清理的原始棋步重建归档；不修改任何
-归档目录。`go-record` 与 `go-record-archive` 的接口和行为不变。
+归档目录或申诉案卷。`go-record` 与 `go-record-archive` 的接口和行为不变；
+不配置 `appeal_dir` 的清单输出与历史版本字节级一致。

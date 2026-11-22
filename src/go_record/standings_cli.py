@@ -44,8 +44,10 @@ def main(argv=None):
     if report['status'] == 'complete':
         summary['qualified'] = report['qualified']
         summary['witnesses'] = len(report['witnesses'])
-    else:
+    elif report['status'] == 'awaiting_final':
         summary['awaiting_game_ids'] = report['awaiting_game_ids']
+    else:
+        summary['awaiting_ruling'] = [entry['game_id'] for entry in report['awaiting_ruling']]
     print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
     return 0
 

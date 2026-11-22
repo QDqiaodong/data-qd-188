@@ -12,7 +12,7 @@ final.area.winner（B/W/draw），并以该盘的末手封存回执 ID 为证据
 """
 import os
 
-from . import archive
+from . import appeal, archive
 from .checks import array, fields, ident, integer
 
 SCHEMA = 'go-record-standings/1'
@@ -72,17 +72,20 @@ def validate_manifest(manifest):
     archive_ids = set()
     for index, entry in enumerate(archives_raw):
         try:
-            fields(entry, ('game_id', 'state_dir'))
+            fields(entry, ('game_id', 'state_dir'), ('appeal_dir',))
             ident(entry['game_id'])
             if not isinstance(entry['state_dir'], str):
                 raise ValueError('state_dir: string required')
+            if 'appeal_dir' in entry and not isinstance(entry['appeal_dir'], str):
+                raise ValueError('appeal_dir: string required')
         except ValueError as error:
             raise Reject('invalid_structure', f'archives[{index}]: {error}', archive_index=index)
         if entry['game_id'] in archive_ids:
             raise Reject('invalid_structure', f'archives[{index}]: duplicate game_id',
                          archive_index=index, game_id=entry['game_id'])
         archive_ids.add(entry['game_id'])
-        archives.append({'game_id': entry['game_id'], 'state_dir': entry['state_dir']})
+        archives.append({'game_id': entry['game_id'], 'state_dir': entry['state_dir'],
+                         'appeal_dir': entry.get('appeal_dir')})
     archives.sort(key=lambda item: item['game_id'])
 
     tables = []
@@ -142,11 +145,54 @@ def validate_manifest(manifest):
 
 # ---------- 归档读取（只读，不修改状态目录） ----------
 
-def read_archives(manifest_dir, entries):
-    """逐份核对归档状态；返回 {game_id: {'winner', 'receipt_id'}}。
+def _read_appeal(manifest_dir, entry, arc, total, receipt_id):
+    """只读核对案卷与归档证据，并确认案卷当前状态与对应裁定一致。
 
-    winner 为 None 表示尚未最终封存的正常状态。只接受封到声明末手、
-    胜负值有效且能指回唯一末手封存回执 ID 的 final.area.winner。
+    一次读取内状态、轮次和胜负来自同一份已提交案卷；不修改案卷。
+    返回 {'appeal_dir', 'status', 'round', 'winner', 'ruling_round'}，
+    未结案时 winner 为 None。
+    """
+    game_id = entry['game_id']
+    appeal_dir = entry['appeal_dir']
+    try:
+        case = appeal.load_case(os.path.join(manifest_dir, appeal_dir))
+    except (appeal.Reject, OSError) as error:
+        raise Reject('appeal_unreadable', f'archive {game_id}: {error}',
+                     game_id=game_id, appeal_dir=appeal_dir)
+    if case.get('game_id') != game_id:
+        raise Reject('appeal_game_id_mismatch',
+                     f'archive {game_id}: appeal case holds game {case.get("game_id")!r}',
+                     game_id=game_id, appeal_dir=appeal_dir, found=case.get('game_id'))
+    evidence_problem = None
+    if case.get('final_receipt_id') != receipt_id:
+        evidence_problem = 'appeal last-move receipt does not match the archive receipt'
+    if case.get('final_sealed_ply') != total:
+        evidence_problem = 'appeal sealed ply does not match the archive last-move position'
+    boundary = arc.get('boundary') if isinstance(arc.get('boundary'), dict) else None
+    if evidence_problem is None and case.get('original_board') != boundary.get('board'):
+        evidence_problem = 'appeal opening board does not match the archived final board'
+    if evidence_problem is None and case.get('size') != arc.get('size'):
+        evidence_problem = 'appeal board size does not match the archive'
+    if evidence_problem is None and case.get('komi') != arc.get('komi'):
+        evidence_problem = 'appeal komi does not match the archive'
+    if evidence_problem is not None:
+        raise Reject('appeal_evidence_mismatch', f'archive {game_id}: {evidence_problem}',
+                     game_id=game_id, appeal_dir=appeal_dir)
+    try:
+        status, round_number, winner = appeal.verify_state(case)
+    except appeal.Reject as error:
+        raise Reject('appeal_state_inconsistent', f'archive {game_id}: {error}',
+                     game_id=game_id, appeal_dir=appeal_dir, **error.details)
+    return {'appeal_dir': appeal_dir, 'status': status, 'round': round_number,
+            'winner': winner, 'ruling_round': round_number if status == 'closed' else None}
+
+
+def read_archives(manifest_dir, entries):
+    """逐份核对归档状态（及可选案卷）；返回 {game_id: 结果与证据}。
+
+    无案卷时维持原行为：winner 为 None 表示尚未最终封存的正常状态。配置案卷后
+    引用的归档必须已有终局证据；只采用案卷当前轮裁定胜负，未结案为 pending_ruling。
+    一次读取同一案卷时，状态、轮次和胜负来自同一份已提交状态。
     """
     outcomes = {}
     for entry in entries:
@@ -169,8 +215,14 @@ def read_archives(manifest_dir, entries):
         if type(total) is not int or type(sealed) is not int or not isinstance(receipts, dict):
             raise Reject('archive_unreadable', f'archive {game_id}: state missing core fields',
                          game_id=game_id, state_dir=state_dir)
+        has_appeal = entry.get('appeal_dir') is not None
         if final is None:
-            outcomes[game_id] = {'winner': None, 'receipt_id': None}
+            if has_appeal:
+                raise Reject('appeal_archive_not_final',
+                             f'archive {game_id}: appeal references an archive without final evidence',
+                             game_id=game_id, state_dir=state_dir, appeal_dir=entry['appeal_dir'])
+            outcomes[game_id] = {'winner': None, 'receipt_id': None,
+                                 'pending': 'awaiting_final', 'appeal': None}
             continue
         problem = None
         if not isinstance(final, dict) or final.get('sealed_ply') != total or sealed != total:
@@ -188,7 +240,21 @@ def read_archives(manifest_dir, entries):
         if problem is not None:
             raise Reject('final_inconsistent', f'archive {game_id}: {problem}',
                          game_id=game_id, state_dir=state_dir)
-        outcomes[game_id] = {'winner': winner, 'receipt_id': receipt_id}
+        if not has_appeal:
+            outcomes[game_id] = {'winner': winner, 'receipt_id': receipt_id,
+                                 'pending': None, 'appeal': None}
+            continue
+        case_report = _read_appeal(manifest_dir, entry, state, total, receipt_id)
+        if case_report['status'] == 'closed':
+            if case_report['winner'] not in RESULTS:
+                raise Reject('appeal_state_inconsistent',
+                             f'archive {game_id}: closed ruling has no valid winner',
+                             game_id=game_id, appeal_dir=entry['appeal_dir'])
+            outcomes[game_id] = {'winner': case_report['winner'], 'receipt_id': receipt_id,
+                                 'pending': None, 'appeal': case_report}
+        else:
+            outcomes[game_id] = {'winner': None, 'receipt_id': receipt_id,
+                                 'pending': 'awaiting_ruling', 'appeal': case_report}
     return outcomes
 
 
@@ -339,7 +405,11 @@ def _standings(players, lot_index, games):
 # ---------- 汇总 ----------
 
 def evaluate(manifest, manifest_dir):
-    """核对清单与归档，产出 complete 或 awaiting_final 报告（不修改任何目录）。"""
+    """核对清单、归档与案卷，产出 complete / awaiting_final / awaiting_ruling 报告。
+
+    不修改任何目录；仍须先完成原结构、归档与完整对应关系检查，缺对应关系不会被
+    awaiting_ruling 掩盖。
+    """
     m = validate_manifest(manifest)
     outcomes = read_archives(manifest_dir, m['archives'])
     tables = m['tables']
@@ -350,15 +420,28 @@ def evaluate(manifest, manifest_dir):
          'usable_candidates': usable[i]}
         for i, t in enumerate(tables)
     ]
-    pending = sorted(game_id for game_id, outcome in outcomes.items() if outcome['winner'] is None)
+    awaiting_final = sorted(game_id for game_id, outcome in outcomes.items()
+                            if outcome['pending'] == 'awaiting_final')
+    awaiting_ruling = sorted(
+        ({'game_id': game_id,
+          'round': outcome['appeal']['round'],
+          'table_ids': sorted(t['table_id'] for t in tables
+                              if game_id in t['candidate_set'])}
+         for game_id, outcome in outcomes.items()
+         if outcome['pending'] == 'awaiting_ruling'),
+        key=lambda item: item['game_id'])
     base = {
         'schema': SCHEMA,
         'qualify_count': m['qualify_count'],
         'tables': tables_report,
-        'awaiting_game_ids': pending,
+        'awaiting_game_ids': awaiting_final,
+        'awaiting_ruling': awaiting_ruling,
     }
-    if pending:
+    if awaiting_final:
         return {**base, 'status': 'awaiting_final',
+                'players': None, 'qualified': None, 'witnesses': None}
+    if awaiting_ruling:
+        return {**base, 'status': 'awaiting_ruling',
                 'players': None, 'qualified': None, 'witnesses': None}
     return _complete(m, outcomes, usable, base)
 
@@ -463,11 +546,15 @@ def _complete(m, outcomes, usable, base):
                         assignment_map[t['table_id']] = sub_archives[a]['game_id']
                         break
                     used[a] = False
-        assignment = [
-            {'table_id': table_id, 'game_id': game_id,
-             'receipt_id': outcomes[game_id]['receipt_id']}
-            for table_id, game_id in sorted(assignment_map.items())
-        ]
+        assignment = []
+        for table_id, game_id in sorted(assignment_map.items()):
+            entry = {'table_id': table_id, 'game_id': game_id,
+                     'receipt_id': outcomes[game_id]['receipt_id']}
+            case_report = outcomes[game_id]['appeal']
+            if case_report is not None:
+                # 见证同时反查原末手回执与采用的裁定轮次；无案卷清单字段不变。
+                entry['appeal_round'] = case_report['ruling_round']
+            assignment.append(entry)
         order, score, opponent, _ranks = _standings(players, lot_index, games_for(vec))
         standings = [
             {'rank': i + 1, 'player_id': player,
