@@ -1,0 +1,6 @@
+{
+  "trees": [
+    {"tree_id": "tree-a", "path": "trees/tree-a.json"},
+    {"tree_id": "tree-b", "path": "trees/tree-b.json"}
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "size": 5,
+  "setup": {
+    "black": [[0, 1], [1, 0], [2, 1], [1, 2]],
+    "white": [[0, 2], [2, 2], [1, 3]]
+  },
+  "next_player": "W",
+  "komi": "0",
+  "nodes": [
+    {"node_id": "retake2", "parent_id": "root", "slot": "retake", "player": "W", "point": [1, 1]},
+    {"node_id": "wait2", "parent_id": "root", "slot": "wait", "player": "W", "point": null}
+  ]
+}

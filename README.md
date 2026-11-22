@@ -10,6 +10,8 @@ board.py 处理棋块气与提子，service.py 管理轮次/简单劫及合法�
 
 离线“下一手”练习集分区：dataset.py 按规范局面键（八向旋转/镜像、不换黑白、含行棋方）与来源系列保守并组，套用已发布历史的分区约束，再按组标识优先联合满足黑先/白先盲评配额，dataset_cli.py 提供 `go-record-dataset --source MANIFEST.json --output REPORT.json`。只输出供人工复核的分区计划，不对外发布；字段、隔离口径与诊断码见 [下一手分区](docs/dataset.md)。
 
+离线导览包：guide.py 把多位作者编辑的变化树按 v1 棋规逐分支独立判定，编制成共享的 diagrams/views/bookmarks 导航图——相同显示图只存一份，完整可见行为（含全部后续导览）相同的位置才共用 view，棋规禁用只禁用当前按钮并在书签中定位首个非法节点，guide_cli.py 提供 `go-record-guide --source MANIFEST.json --output PACKAGE.json`。字段、共用口径与诊断码见 [离线导览包](docs/guide.md)。
+
 ## 安装、测试与演示
 
 Python >=3.11，本批实际使用本机 CPython3.12.14。运行与测试仅用标准库；构建工具精确锁定。每仓独立 .venv，公共包缓存可共享；不共享其他项目的site-packages。
@@ -25,7 +27,7 @@ uv pip check --python .venv/bin/python
 .venv/bin/go-record --source fixtures/input.json --output run/report-initial.json
 ```
 
-实际60项测试通过；CLI演示生成JSON，摘要为：
+实际81项测试通过；CLI演示生成JSON，摘要为：
 
 ```json
 {
@@ -61,4 +63,4 @@ uv pip check --python .venv/bin/python
 
 ## 当前边界
 
-只有simple ko与无自杀模型，无SGF、超级劫、死活AI或赛事裁定。 实际后续需求可从变化树导入、棋谱片段复用和人工死子裁定沿既有身份和结果集成；当前未实现这些扩展，也不保证固定数量的未来任务。
+只有simple ko与无自杀模型，无SGF、超级劫、死活AI或赛事裁定。 实际后续需求可从棋谱片段复用和人工死子裁定沿既有身份和结果集成；变化树到共享导航图的离线导览已由 go-record-guide 提供，当前未实现这些扩展，也不保证固定数量的未来任务。
