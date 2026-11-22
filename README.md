@@ -8,6 +8,8 @@ board.py 处理棋块气与提子，service.py 管理轮次/简单劫及合法�
 
 赛后对账与晋级核定：standings.py 按交接清单核对台次↔盘号的一一对应、枚举可行对应关系并独立核定名次，standings_cli.py 提供 `go-record-standings --source MANIFEST.json --output REPORT.json`。清单字段、晋级口径、见证与诊断码见 [对账与晋级](docs/standings.md)。
 
+离线“下一手”练习集分区：dataset.py 按规范局面键（八向旋转/镜像、不换黑白、含行棋方）与来源系列保守并组，套用已发布历史的分区约束，再按组标识优先联合满足黑先/白先盲评配额，dataset_cli.py 提供 `go-record-dataset --source MANIFEST.json --output REPORT.json`。只输出供人工复核的分区计划，不对外发布；字段、隔离口径与诊断码见 [下一手分区](docs/dataset.md)。
+
 ## 安装、测试与演示
 
 Python >=3.11，本批实际使用本机 CPython3.12.14。运行与测试仅用标准库；构建工具精确锁定。每仓独立 .venv，公共包缓存可共享；不共享其他项目的site-packages。
@@ -23,7 +25,7 @@ uv pip check --python .venv/bin/python
 .venv/bin/go-record --source fixtures/input.json --output run/report-initial.json
 ```
 
-实际37项测试通过；CLI演示生成JSON，摘要为：
+实际60项测试通过；CLI演示生成JSON，摘要为：
 
 ```json
 {
@@ -45,6 +47,17 @@ uv pip check --python .venv/bin/python
 .venv/bin/go-record-archive view --state run/game --target 3
 .venv/bin/go-record-archive seal --state run/game --target 3 --credential <view签发的hex>
 ```
+
+下一手分区演示（读 [样例清单](fixtures/dataset/manifest-without-k.json) 生成可复核计划，
+输出原子新建，复跑请换新路径）：
+
+```sh
+.venv/bin/go-record-dataset --source fixtures/dataset/manifest.json --output run/dataset-isolated.json
+.venv/bin/go-record-dataset --source fixtures/dataset/manifest-without-k.json --output run/dataset-ready.json
+```
+
+第一条因历史训练/盲评两侧约束把整组隔离而输出 `quota_unreachable`；第二条输出 `ready`，
+与 [预期报告](fixtures/dataset/expected-report.json) 一致。详见 [下一手分区](docs/dataset.md)。
 
 ## 当前边界
 

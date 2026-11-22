@@ -1,0 +1,251 @@
+{
+  "batch_id": "batch-2026-11",
+  "exclusions": [],
+  "grouping": {
+    "groups": [
+      {
+        "constraint": "train",
+        "counts": {
+          "B": 1,
+          "W": 0
+        },
+        "group_id": "A",
+        "position_keys": [
+          {
+            "board": [
+              "....",
+              "....",
+              "....",
+              "..B."
+            ],
+            "next_player": "B",
+            "size": 4
+          }
+        ],
+        "sample_ids": [
+          "s-a"
+        ],
+        "source_groups": [
+          "A"
+        ]
+      },
+      {
+        "constraint": "holdout",
+        "counts": {
+          "B": 1,
+          "W": 0
+        },
+        "group_id": "C",
+        "position_keys": [
+          {
+            "board": [
+              "....",
+              "....",
+              "....",
+              ".BB."
+            ],
+            "next_player": "B",
+            "size": 4
+          }
+        ],
+        "sample_ids": [
+          "s-c"
+        ],
+        "source_groups": [
+          "C"
+        ]
+      },
+      {
+        "constraint": "train",
+        "counts": {
+          "B": 0,
+          "W": 1
+        },
+        "group_id": "W",
+        "position_keys": [
+          {
+            "board": [
+              "....",
+              "....",
+              ".BB.",
+              "...."
+            ],
+            "next_player": "W",
+            "size": 4
+          }
+        ],
+        "sample_ids": [
+          "s-w"
+        ],
+        "source_groups": [
+          "W"
+        ]
+      }
+    ],
+    "isolated": []
+  },
+  "publication": {
+    "holdout": [
+      {
+        "board": [
+          "....",
+          "....",
+          "....",
+          ".BB."
+        ],
+        "next_player": "B",
+        "release_id": "batch-2026-11",
+        "sample_id": "s-c",
+        "size": 4,
+        "source_group": "C",
+        "split": "holdout"
+      }
+    ],
+    "train": [
+      {
+        "board": [
+          ".B..",
+          "....",
+          "....",
+          "...."
+        ],
+        "next_player": "B",
+        "release_id": "batch-2026-11",
+        "sample_id": "s-a",
+        "size": 4,
+        "source_group": "A",
+        "split": "train"
+      },
+      {
+        "board": [
+          "....",
+          ".BB.",
+          "....",
+          "...."
+        ],
+        "next_player": "W",
+        "release_id": "batch-2026-11",
+        "sample_id": "s-w",
+        "size": 4,
+        "source_group": "W",
+        "split": "train"
+      }
+    ]
+  },
+  "schema": "go-record-dataset/1",
+  "splits": {
+    "holdout": {
+      "counts": {
+        "B": 1,
+        "W": 0
+      },
+      "sample_count": 1,
+      "samples": [
+        {
+          "answer": [
+            3,
+            0
+          ],
+          "board": [
+            "....",
+            "....",
+            "....",
+            ".BB."
+          ],
+          "group_id": "C",
+          "move_id": "c1",
+          "next_player": "B",
+          "ply": 1,
+          "position_key": {
+            "board": [
+              "....",
+              "....",
+              "....",
+              ".BB."
+            ],
+            "next_player": "B",
+            "size": 4
+          },
+          "record_id": "C",
+          "sample_id": "s-c",
+          "size": 4,
+          "source_group": "C"
+        }
+      ]
+    },
+    "train": {
+      "counts": {
+        "B": 1,
+        "W": 1
+      },
+      "sample_count": 2,
+      "samples": [
+        {
+          "answer": [
+            0,
+            2
+          ],
+          "board": [
+            ".B..",
+            "....",
+            "....",
+            "...."
+          ],
+          "group_id": "A",
+          "move_id": "a1",
+          "next_player": "B",
+          "ply": 1,
+          "position_key": {
+            "board": [
+              "....",
+              "....",
+              "....",
+              "..B."
+            ],
+            "next_player": "B",
+            "size": 4
+          },
+          "record_id": "A",
+          "sample_id": "s-a",
+          "size": 4,
+          "source_group": "A"
+        },
+        {
+          "answer": [
+            0,
+            0
+          ],
+          "board": [
+            "....",
+            ".BB.",
+            "....",
+            "...."
+          ],
+          "group_id": "W",
+          "move_id": "w1",
+          "next_player": "W",
+          "ply": 1,
+          "position_key": {
+            "board": [
+              "....",
+              "....",
+              ".BB.",
+              "...."
+            ],
+            "next_player": "W",
+            "size": 4
+          },
+          "record_id": "W",
+          "sample_id": "s-w",
+          "size": 4,
+          "source_group": "W"
+        }
+      ]
+    }
+  },
+  "status": "ready",
+  "targets": {
+    "B": 1,
+    "W": 0
+  }
+}

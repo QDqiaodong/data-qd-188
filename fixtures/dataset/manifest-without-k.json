@@ -1,0 +1,18 @@
+{
+  "batch_id": "batch-2026-11",
+  "records": [
+    {"record_id": "A", "source_group": "A", "path": "records/a.json"},
+    {"record_id": "C", "source_group": "C", "path": "records/c.json"},
+    {"record_id": "W", "source_group": "W", "path": "records/w.json"}
+  ],
+  "samples": [
+    {"sample_id": "s-a", "record_id": "A", "ply": 1},
+    {"sample_id": "s-c", "record_id": "C", "ply": 1},
+    {"sample_id": "s-w", "record_id": "W", "ply": 1}
+  ],
+  "history": [
+    {"release_id": "rel-2026-01", "sample_id": "h1", "source_group": "hist-u", "size": 4, "board": ["....", "....", "....", "..B."], "next_player": "B", "split": "train"},
+    {"release_id": "rel-2026-02", "sample_id": "h2", "source_group": "hist-v", "size": 4, "board": ["....", "....", "....", ".BB."], "next_player": "B", "split": "holdout"}
+  ],
+  "holdout_quota": {"B": 1, "W": 0}
+}
