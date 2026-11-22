@@ -5,8 +5,7 @@ def coordinate(value):
     array(value,2,2)
     return tuple(integer(x,-100,100) for x in value)
 
-def validate(data):
-    fields(data,('size','setup','next_player','komi','moves'))
+def setup_board(data):
     size=integer(data['size'],3,19)
     if data['next_player'] not in ('B','W'):raise ValueError('B/W required')
     komi=decimal(data['komi'])
@@ -24,6 +23,11 @@ def validate(data):
             stones,liberties=group(board,point,size)
             if not liberties:raise ValueError('setup contains a group without liberties')
             seen.update(stones)
+    return board,komi
+
+def validate(data):
+    fields(data,('size','setup','next_player','komi','moves'))
+    board,komi=setup_board(data)
     for move in array(data['moves'],0,2000):
         fields(move,('id','player','point'));ident(move['id'])
         if move['player'] not in ('B','W'):raise ValueError('B/W required')
