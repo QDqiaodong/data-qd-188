@@ -1,0 +1,120 @@
+{
+  "games": [
+    {
+      "first_illegal": null,
+      "game_id": "G",
+      "legal_plies": 2,
+      "path": "G.json"
+    },
+    {
+      "first_illegal": null,
+      "game_id": "H",
+      "legal_plies": 2,
+      "path": "H.json"
+    }
+  ],
+  "lookups": [
+    {
+      "capture_ply": 2,
+      "fact": {
+        "capture_move_id": "g2",
+        "capture_player": "B",
+        "capture_ply": 2,
+        "captured_color": "W",
+        "life": 1,
+        "origin": "played",
+        "point": [
+          1,
+          1
+        ],
+        "source_move_id": "g1",
+        "source_ply": 1
+      },
+      "game_id": "G",
+      "lookup_id": "g-11",
+      "point": [
+        1,
+        1
+      ]
+    },
+    {
+      "capture_ply": 2,
+      "fact": {
+        "capture_move_id": "g2",
+        "capture_player": "B",
+        "capture_ply": 2,
+        "captured_color": "W",
+        "life": null,
+        "origin": "setup",
+        "point": [
+          1,
+          2
+        ],
+        "source_move_id": null,
+        "source_ply": null
+      },
+      "game_id": "G",
+      "lookup_id": "g-12",
+      "point": [
+        1,
+        2
+      ]
+    },
+    {
+      "capture_ply": 2,
+      "fact": {
+        "capture_move_id": "h2",
+        "capture_player": "B",
+        "capture_ply": 2,
+        "captured_color": "W",
+        "life": null,
+        "origin": "setup",
+        "point": [
+          1,
+          1
+        ],
+        "source_move_id": null,
+        "source_ply": null
+      },
+      "game_id": "H",
+      "lookup_id": "h-11",
+      "point": [
+        1,
+        1
+      ]
+    }
+  ],
+  "queries": [
+    {
+      "capture_from": 2,
+      "capture_to": 2,
+      "game_count": 1,
+      "life_from": 1,
+      "life_to": 1,
+      "origin": "played",
+      "query_id": "played-life-1",
+      "stone_count": 1
+    },
+    {
+      "capture_from": 2,
+      "capture_to": 2,
+      "game_count": 0,
+      "life_from": 2,
+      "life_to": 2,
+      "origin": "played",
+      "query_id": "played-life-2",
+      "stone_count": 0
+    },
+    {
+      "capture_from": 2,
+      "capture_to": 2,
+      "game_count": 2,
+      "life_from": null,
+      "life_to": null,
+      "origin": "setup",
+      "query_id": "setup",
+      "stone_count": 5
+    }
+  ],
+  "schema": "go-record-capture-study/1"
+}

@@ -16,6 +16,7 @@ go-record-standings = "go_record.standings_cli:main"
 go-record-appeal = "go_record.appeal_cli:main"
 go-record-dataset = "go_record.dataset_cli:main"
 go-record-guide = "go_record.guide_cli:main"
+go-record-capture-study = "go_record.capture_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

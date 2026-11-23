@@ -14,6 +14,8 @@ board.py 处理棋块气与提子，service.py 管理轮次/简单劫及合法�
 
 离线导览包：guide.py 把多位作者编辑的变化树按 v1 棋规逐分支独立判定，编制成共享的 diagrams/views/bookmarks 导航图——相同显示图只存一份，完整可见行为（含全部后续导览）相同的位置才共用 view，棋规禁用只禁用当前按钮并在书签中定位首个非法节点，guide_cli.py 提供 `go-record-guide --source MANIFEST.json --output PACKAGE.json`。字段、共用口径与诊断码见 [离线导览包](docs/guide.md)。
 
+被提棋子来源研究：capture.py 一次读入多份原始棋谱和一批任意区间查询，在 v1 合法前缀上逐手回放，为每颗棋子实例记住来源（`setup` 或落下的 `played` 手号/步 ID），逐子产出提子事实并一次性回答全部查询的 `stone_count`（棋子实例数）与 `game_count`（至少命中一颗的不同盘号数），另支持少量逐子反查；capture_cli.py 提供 `go-record-capture-study --source MANIFEST.json --output REPORT.json`。只交付本次报告、不保留运行间状态。字段、寿命口径与规模验收见 [被提棋子来源研究](docs/capture.md)。
+
 ## 安装、测试与演示
 
 Python >=3.11，本批实际使用本机 CPython3.12.14。运行与测试仅用标准库；构建工具精确锁定。每仓独立 .venv，公共包缓存可共享；不共享其他项目的site-packages。
@@ -29,7 +31,7 @@ uv pip check --python .venv/bin/python
 .venv/bin/go-record --source fixtures/input.json --output run/report-initial.json
 ```
 
-实际107项测试通过（含申诉案卷与晋级接入 26 项）；CLI演示生成JSON，摘要为：
+实际135项测试通过（含申诉案卷与晋级接入 26 项、被提棋子来源研究 28 项）；CLI演示生成JSON，摘要为：
 
 ```json
 {
@@ -68,6 +70,16 @@ uv pip check --python .venv/bin/python
 ```sh
 PYTHONPATH=src python3 examples/appeal_demo.py
 ```
+
+被提棋子来源研究演示（读 [样例清单](fixtures/capture/manifest.json) 生成与
+[预期报告](fixtures/capture/expected-report.json) 一致的报告，输出原子新建，复跑请换新路径）：
+
+```sh
+.venv/bin/go-record-capture-study --source fixtures/capture/manifest.json --output run/capture.json
+```
+
+合成规模验收（384 盘 19 路、40,000 查询，单进程 256 MiB / 75 秒 CPU）见
+`tests/test_capture_synthetic.py`；生成器为 `examples/capture_synthetic.py`。
 
 ## 当前边界
 

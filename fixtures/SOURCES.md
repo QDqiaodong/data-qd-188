@@ -5,3 +5,5 @@
 `fixtures/dataset/` 下的 `manifest*.json`、`records/*.json` 与 `expected-report.json` 同样是作者自制的合成棋谱与已发布历史，仅用于演示“下一手”分区口径（见 docs/dataset.md）。
 
 `fixtures/guide/` 下的清单与 `trees/*.json` 是作者自制的合成变化树，仅用于演示离线导览包的显示图共用、view 最大共用与非法分支书签口径（见 docs/guide.md）。
+
+`fixtures/capture/` 下的 `manifest.json`、`G.json`、`H.json` 与 `expected-report.json` 是作者自制的合成棋谱与被提棋子来源分析报告，仅用于演示来源/寿命口径与逐子反查（见 docs/capture.md）。
